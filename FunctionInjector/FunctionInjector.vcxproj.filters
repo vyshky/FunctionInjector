@@ -19,6 +19,9 @@
     <Filter Include="Исходные файлы\Services">
       <UniqueIdentifier>{e2fc7cee-8a18-4cd0-a121-25c158354241}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Исходные файлы\Models">
+      <UniqueIdentifier>{db668312-2eab-40c6-a10d-53f06501ec37}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -29,6 +32,9 @@
     </ClCompile>
     <ClCompile Include="CaveInjectorService.cpp">
       <Filter>Исходные файлы\Services</Filter>
+    </ClCompile>
+    <ClCompile Include="CaveMemoryCleanModel.cpp">
+      <Filter>Исходные файлы\Models</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -41,8 +41,8 @@ public:
 		}
 	}
 
-	void writeCode(HANDLE process, LPVOID address ,vector<BYTE> combinedCode) {
-		if (!WriteProcessMemory(process, address, combinedCode.data(), combinedCode.size(), NULL)) {
+	void writeCode(HANDLE process, LPVOID address ,vector<BYTE> code) {
+		if (!WriteProcessMemory(process, address, code.data(), code.size(), NULL)) {
 			VirtualFreeEx(process, address, 0, MEM_RELEASE);
 			throw std::runtime_error("Failed to write to target process memory: " + std::to_string(GetLastError()));
 		}

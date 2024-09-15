@@ -62,7 +62,8 @@ int main() {
 	DWORD id = findProcess(L"SkyrimSE.exe");
 	HANDLE process = openProcess(id);
 	CaveInjectorService injector = CaveInjectorService();
-	injector.inject(process, 0x7FF777EE7BE0, 0x7FF777EE7C06, vec);
-	injector.close();
+	injector.inject(process, 0x7FF6607C7BE0, 0x7FF6607C7BFF, vec);
+	Sleep(5000);
+	injector.close(process);
 	return 0;
 }

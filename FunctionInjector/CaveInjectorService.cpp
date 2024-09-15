@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <utility>
 //#include <tlhelp32.h>
 //#include <iostream>
 //#include <psapi.h>
@@ -6,22 +7,24 @@
 //#include <vector>
 //#include <iomanip>
 #include "MemoryEx.cpp" // Заменить на общий хедер
+#include "CaveMemoryCleanModel.cpp"
 
 class CaveInjectorService {
 	// Хранение типо вот такокго АДРЕСС->pair{ process , oldCode}
 	// при закрытии инжекта закрывать возвращать oldCode
 	// удалять выделенный мемори
 	// закрывать process
-	vector<pair<LPVOID, vector<BYTE>>> addresses{};
+	vector<CaveMemoryCleanModel> vecCaveMemoryCleanModel{};
+	MemoryEx managerMem = MemoryEx();
 public:
 	// Вырезает оригинальную функцию от originalAddressStart до originalAddressEnd, делее записывает в
 	// конец caveFunction, после, также в конец записывает JMP originalAddressStart, создает новую память и записывает полученный код
 	// в новую память процесса.
 	// По адрессу originalAddressEnd, записывается JMP на новую память
 	void inject(HANDLE process, const DWORD_PTR originAddressStart, const DWORD_PTR originAddressEnd, const vector<BYTE> caveFunction) {
-		MemoryEx managerMem = MemoryEx();
 		managerMem.isReadeble(process, originAddressStart);
 		vector<BYTE> originCode = managerMem.ReadMemory(process, originAddressStart, originAddressEnd);
+
 		vector<BYTE> combinedCode;
 		combinedCode.reserve(originCode.size() + caveFunction.size());
 		combinedCode.insert(combinedCode.end(), originCode.begin(), originCode.end());
@@ -36,6 +39,13 @@ public:
 		LPVOID newMemoryAddress = managerMem.allocateMemory(process, combinedCode.size());
 		managerMem.writeCode(process, newMemoryAddress, combinedCode);
 
+		// Сохранение информации для дальнейшей отчистики процесса от инжектированной функции
+		CaveMemoryCleanModel caveMemoryCleanModel{};
+		caveMemoryCleanModel.process = process;
+		caveMemoryCleanModel.injectedAddress = (LPVOID)originAddressStart;
+		caveMemoryCleanModel.caveAddress = newMemoryAddress;
+		caveMemoryCleanModel.data = originCode;
+		vecCaveMemoryCleanModel.push_back(caveMemoryCleanModel);
 
 		// Очищаем код, чтобы записать прыжок на нашу новую функцию
 		combinedCode.clear();
@@ -44,15 +54,18 @@ public:
 		combinedCode.insert(combinedCode.end(), jmpNewMemoryAddress.begin(), jmpNewMemoryAddress.end());
 
 		managerMem.writeCode(process, (LPVOID)originAddressStart, combinedCode);         // делаем JMP на нашу функцию
-		//managerMem.clearMemory(process, newMemoryAddress);
 	}
 
-
+	// удалять cave функцию
+	// вернуть код по адресу где происходил инжект, в исходное состояние
+	// закрывать process
 	void close(HANDLE process) {
-		// Хранение типо вот такокго АДРЕСС->pair{ process , oldCode}
-		// при закрытии инжекта закрывать возвращать oldCode
-		// удалять выделенный мемори
-		// закрывать process
+
+		for (size_t i = 0; i < vecCaveMemoryCleanModel.size(); ++i) {
+			managerMem.clearMemory(vecCaveMemoryCleanModel[i].process, vecCaveMemoryCleanModel[i].caveAddress);
+			managerMem.writeCode(vecCaveMemoryCleanModel[i].process, vecCaveMemoryCleanModel[i].injectedAddress, vecCaveMemoryCleanModel[i].data);
+			CloseHandle(vecCaveMemoryCleanModel[i].process);
+		}
 	}
 
 	std::vector<BYTE> pointerToByteVector(LPVOID ptr) {

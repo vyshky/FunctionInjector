@@ -21,7 +21,7 @@ public:
 	// конец caveFunction, после, также в конец записывает JMP originalAddressStart, создает новую память и записывает полученный код
 	// в новую память процесса.
 	// По адрессу originalAddressEnd, записывается JMP на новую память
-	void inject(HANDLE process, const DWORD_PTR originAddressStart, const DWORD_PTR originAddressEnd, const vector<BYTE> caveFunction) {
+	LPVOID inject(HANDLE process, const DWORD_PTR originAddressStart, const DWORD_PTR originAddressEnd, const vector<BYTE> caveFunction) {
 		managerMem.isReadeble(process, originAddressStart);
 		vector<BYTE> originCode = managerMem.ReadMemory(process, originAddressStart, originAddressEnd);
 
@@ -30,11 +30,12 @@ public:
 		combinedCode.insert(combinedCode.end(), originCode.begin(), originCode.end());
 		combinedCode.insert(combinedCode.end(), caveFunction.begin(), caveFunction.end());
 
-
 		vector<BYTE> jmp = { 0xFF, 0x25, 0x00, 0x00, 0x00, 0x00 };            // команда JMP
 		vector<BYTE> returnAddress = pointerToByteVector((LPVOID)originAddressEnd);  // адресс прыжка на originalAddressEnd
 		combinedCode.insert(combinedCode.end(), jmp.begin(), jmp.end());
 		combinedCode.insert(combinedCode.end(), returnAddress.begin(), returnAddress.end());
+
+		SIZE_T sizeFunction = combinedCode.size();
 
 		LPVOID newMemoryAddress = managerMem.allocateMemory(process, combinedCode.size());
 		managerMem.writeCode(process, newMemoryAddress, combinedCode);
@@ -54,6 +55,7 @@ public:
 		combinedCode.insert(combinedCode.end(), jmpNewMemoryAddress.begin(), jmpNewMemoryAddress.end());
 
 		managerMem.writeCode(process, (LPVOID)originAddressStart, combinedCode);         // делаем JMP на нашу функцию
+		return LPVOID((DWORD_PTR)newMemoryAddress + sizeFunction);
 	}
 
 	// удалять cave функцию

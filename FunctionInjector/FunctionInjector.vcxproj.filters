@@ -36,5 +36,8 @@
     <ClCompile Include="CaveMemoryCleanModel.cpp">
       <Filter>Исходные файлы\Models</Filter>
     </ClCompile>
+    <ClCompile Include="ProcessUtils.cpp">
+      <Filter>Исходные файлы\Utils</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

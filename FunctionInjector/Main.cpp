@@ -11,8 +11,9 @@
 #include "ProcessUtils.cpp"
 using namespace std;
 
-static void teleportController();
 static LPVOID vectorToAddress(std::vector<BYTE>& bytes);
+static bool  ReadBytes(HANDLE hProcess, LPVOID address, BYTE* buffer, SIZE_T sizeByte);
+static bool WriteBytes(HANDLE hProcess, LPVOID address, BYTE* buffer, SIZE_T sizeByte);
 
 //0x48, 0x81, 0xC1, 0x20, 0x01, 0x00, 0x00, - add rcx, 00000120
 //0x48, 0x89, 0x0D, 0x18, 0x00, 0x00, 0x00, - mov[1CCDB300039], rcx
@@ -56,7 +57,79 @@ int main() {
 	}
 
 	// Сохраняем в переменную
-	LPVOID  addressCoodrsXYZ =  vectorToAddress(addressCoordsArray);
+	LPVOID  addressCoodrsXYZ = vectorToAddress(addressCoordsArray);
+	LPVOID zCord = (LPVOID)((BYTE*)addressCoodrsXYZ + 8);
+	BYTE buffer[4]{ };
+	ReadBytes(process, zCord, buffer, 4);
+
+	//////////////////////////////////////////////////////// Преобразовать байты в целое число (Big Endian)
+	//unsigned int value = (buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3];  // Старший байт первый
+
+	//std::cout << "Original value (Big Endian): " << value << std::endl;
+	std::cout << "Exit button Q" << std::endl;
+	bool playerUp = false;
+	bool playerDown = false;
+	bool flyON = false;
+	Sleep(1000);
+	for (unsigned int i = buffer[2]; true;) {
+		if (i > 255) {
+			i = 0;
+		}
+
+		if (GetAsyncKeyState(VK_DELETE) & 0x8000) {
+			flyON = !flyON;
+			ReadBytes(process, zCord, buffer, 4);
+			i = buffer[2];
+			Sleep(500);
+		}
+
+		if (flyON) {
+
+			if (GetAsyncKeyState(VK_SPACE) & 0x8000) {
+				playerUp = true;
+			}
+			else {
+				playerUp = false;
+			}
+
+			if (GetAsyncKeyState(VK_CONTROL) & 0x8000) {
+				playerDown = true;
+			}
+			else {
+				playerDown = false;
+			}
+
+			if (playerUp) {
+				buffer[2] = ++i;
+				if (i > 255) {
+					i = 0;
+					buffer[2] = 0;
+					buffer[3] += 1;
+				}
+				WriteBytes(process, zCord, buffer, 4);
+				Sleep(100);
+			}
+			else if (playerDown) {
+				buffer[2] = --i;
+				if (i == 0) {
+					i = 255;
+					buffer[2] = 255.0f;
+					buffer[3] -= 1;
+				}
+				WriteBytes(process, zCord, buffer, 4);
+				Sleep(100);
+			}
+			else
+			{
+				WriteBytes(process, zCord, buffer, 4);
+			}
+		}
+		// Проверяем, нажата ли клавиша 'Q'
+		if (GetAsyncKeyState('Q') & 0x8000) {
+			std::cout << "Programm Closed" << std::endl;
+			break;  // Выход из цикла
+		}
+	}
 
 	injector.close(process);
 	return 0;
@@ -82,7 +155,10 @@ LPVOID vectorToAddress(std::vector<BYTE>& bytes) {
 	return reinterpret_cast<LPVOID>(address);
 }
 
-void teleportController()
-{
+bool WriteBytes(HANDLE hProcess, LPVOID address, BYTE* buffer, SIZE_T sizeByte) {
+	return WriteProcessMemory(hProcess, address, buffer, sizeByte, NULL);
+}
 
+bool ReadBytes(HANDLE hProcess, LPVOID address, BYTE* buffer, SIZE_T sizeByte) {
+	return ReadProcessMemory(hProcess, address, buffer, sizeByte, NULL);
 }

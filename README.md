@@ -9,4 +9,4 @@ Injector
 Видео отчет:
 
 
-[![Best job in the world!](https://img.youtube.com/vi/94HLyui6eVk/0.jpg)](https://youtu.be/XZ5RrvXTFMs)
+[![Best job in the world!]](https://youtu.be/XZ5RrvXTFMs)

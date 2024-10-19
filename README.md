@@ -9,4 +9,4 @@ Injector
 Видео отчет:
 
 
-[![Best job in the world!]](https://youtu.be/XZ5RrvXTFMs)
+[Skyrim1](https://youtu.be/XZ5RrvXTFMs)
